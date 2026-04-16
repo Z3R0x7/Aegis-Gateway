@@ -1,0 +1,20 @@
+Phase,Category,Component,Specific Detail
+Phase 1: Attacker,MCU,Arduino Uno (R3),Clone or Original (USB-B)
+,Interface,USB Cable,USB-A to USB-B
+,Control,Potentiometer,10kΩ Linear
+,Extras,Breadboard,Mini (400 points)
+Phase 2: Defense,Brain,Raspberry Pi Pico W,Built-in Wi-Fi for Dashboard
+,Interface,Micro-USB Cable,Pico to Laptop (Data/Power)
+,Sensing,MCP3008 ADC,10-bit SPI Interface
+,Logic Logic,Logic Level Shifter,4-channel (3.3V to 5V)
+,Precision,Resistor Pack,"1% Metal Film (10k,3.3k,1k)"
+,Switching,DC-DC SSR,"3-32VDC Input, 5-60VDC Output"
+Phase 3: The Car,Actuator,12V DC Solenoid,Pull-type (Small/Medium)
+,Driver,IRFZ44N MOSFET,N-Channel Power MOSFET
+,Visuals,RGB LED,Common Cathode (4-pin)
+,Safety,1N4007 Diode,Flyback protection for Solenoid
+,Power,12V Power Adapter,2A minimum rating
+,Power,DC Barrel Jack,Female Connector (Screw Terminal)
+Common Extras,Wiring,Jumper Wires (M-M),40-piece bundle
+,Wiring,Jumper Wires (F-M),40-piece bundle
+,Structure,Breadboard,Full-size (830 points)
