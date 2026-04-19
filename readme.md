@@ -1,49 +1,67 @@
-# Aegis Gateway: Cyber-Physical EV Firewall
+# ⚡ AEGIS — Dual-Layer EV Charging Security System
+> **MAHE Mobility Challenge 2026 · Track B: Secure Plug & Charge Protocol**
 
-This is the project I built for the **Make Mobility Challenge** final round. It’s a hardware-level firewall (Aegis Gateway) that sits between an Electric Vehicle (EV) and a charging station to stop cyber-physical attacks.
+![Status](https://img.shields.io/badge/Status-Functional_Prototype-success)
+![Security](https://img.shields.io/badge/Security-Dual--Layer-blue)
+![License](https://img.shields.io/badge/License-MIT-green)
 
-## The Idea
-Most EV chargers use a basic signal to tell the car how much power to take. This signal isn't encrypted, so if a charging station gets hacked, it could send a "bad" signal to damage the car's electronics or force the charging lock to open. 
+AEGIS is a hardware-software intervention designed to protect EV infrastructure from two critical attack vectors: **Juice Jacking** (PWM signal injection) and **Identity Spoofing** (Rogue chargers).
 
-Aegis is a **Zero-Trust** bridge. It reads the signal on a Raspberry Pi Pico W, checks if the timing is correct, and only then passes it to the car. If it sees something weird, it physically cuts the connection.
-
----
-
-## Hardware & Assembly
-
-### 1. The Parts
-I used a mix of microcontrollers for the simulation and industrial-grade components for the power switching.
-
-![parts](./media/parts.jpg)
-*Everything used: Arduino Uno (Attacker), RPi Pico W (Gateway), IRFZ44N MOSFET, and a 12V Solenoid.*
-
-### 2. The Setup
-Right now, the system is in the "Hardware-in-the-Loop" testing phase. The Arduino generates the PWM signal, the Pico analyzes it, and the Solenoid acts as the vehicle's physical lock.
-
-![setup](./media/setup.jpg)
-*The half-built system on the breadboard. You can see the logic bridge between the two microcontrollers.*
+By implementing a **"Fail-Fast"** architecture, AEGIS ensures that no cryptographic data is ever exposed to a source that hasn't first passed a physical signal integrity check.
 
 ---
 
-## How it Works
-1. **The Attacker (Arduino Uno):** Mimics a compromised charger. I can change the PWM duty cycle using a knob (potentiometer) to test if the gateway catches the anomaly.
-2. **The Gateway (RPi Pico W):** This is the brain. It runs at 133MHz, so it can react way faster than a software firewall. 
-3. **The Switch (MOSFET):** A high-speed switch that handles the 12V power for the car's locking mechanism.
+## 🏗️ System Architecture
+The system separates responsibilities between the **Charger Side** (Execution) and the **Vehicle Side** (Auditing).
 
-## Research Base
-This project is based on the research paper: **"Exploiting and Securing the EV Charging Physical Layer"**. 
-You can find the original paper here: [arXiv:2506.16400](https://arxiv.org/abs/2506.16400).
+![System Architecture](./media/architecture_diagram.png)
+
+### **The Two-Layer Defense**
+1.  **Layer 1 (Physical):** Real-time monitoring of the IEC 61851 Control Pilot signal. Deviations from the $1\text{kHz}$ standard trigger a hard hardware block.
+2.  **Layer 2 (Cryptographic):** A zero-trust XOR challenge-response handshake that prevents replay and spoofing attacks.
 
 ---
 
-## Project Roadmap
-- [ ] Add an OLED screen to show "Threat Levels" in real-time.
-- [ ] Code a proper FFT (Fast Fourier Transform) to detect signal jitter.
-- [ ] Design a 3D-printed case to make it look like a real product.
+## 📊 Attack Scenarios Demonstrated
+| Attack Method | Blocked By | Technical Logic |
+| :--- | :--- | :--- |
+| **Juice Jacking** | Layer 1 | Detected $5\text{kHz}$ malicious PWM injection. |
+| **Signal Clone** | Layer 2 | Replicated $1\text{kHz}$ pulse but failed key verification. |
+| **Replay Attack** | Layer 2 | Handshake failed because Nonce was already consumed. |
+| **Brute Force** | Layer 2 | Failed XOR+Seed calculation; access denied. |
 
-**Aegis is standing guard.** 🛡️⚡
+---
 
-```text
-      (\_/)
-      ( •_•)
-      / >🛡️  "Access Denied!"
+## 🔌 Hardware Configuration
+The prototype is built using a dual-MCU setup to simulate the interface between a Charging Station and a Vehicle BMS.
+
+![Final Setup](./media/setup.jpg)
+
+### **Bill of Materials**
+* **Arduino Uno:** Charger Simulator & OLED Driver.
+* **Raspberry Pi Pico W:** Vehicle BMS & Security Auditor.
+* **IRF520 MOSFET:** Physical power gate (Hardware Enforced).
+* **SSD1306 OLED:** Live status and breach telemetry.
+
+---
+
+## 💻 Running the Demo
+
+### **Software-Only Simulation (No Hardware Required)**
+Demonstrate the cryptographic logic using two terminal windows:
+1.  **Terminal 1 (Vehicle):** `python3 demo/gateway.py`
+2.  **Terminal 2 (Charger):** `python3 demo/charger.py`
+
+### **Hardware Integration**
+1.  Flash `src/attacker/attacker.ino` to the Arduino.
+2.  Flash `src/gateway/aegis_logic.py` to the Pico.
+3.  **The Test:** Turn the potentiometer. Watch the OLED switch from `SECURE` (1kHz) to `BREACH` (5kHz) as the MOSFET physically cuts power.
+
+---
+
+* **Security Depth:** Two independent layers (Physical + Crypto).
+* **Safety:** MOSFET defaults to LOW (Fail-Safe by design).
+* **Standards:** Fully compliant with **IEC 61851** and **ISO 15118** principles.
+
+---
+**Built for the MAHE Mobility Challenge 2026 — Cybersecurity Track**
