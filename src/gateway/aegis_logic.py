@@ -1,22 +1,30 @@
-# Aegis Gateway - Security Logic
-# Running on MicroPython (RPi Pico W)
-
-from machine import Pin
+ from machine import Pin, time_pulse_us
 import time
 
-# Pin Definitions
-attacker_in = Pin(0, Pin.IN)  # Input signal from Arduino
-car_out = Pin(1, Pin.OUT)     # Filtered output to MOSFET/Solenoid
+audit_in = Pin(0, Pin.IN)
+trigger_out = Pin(15, Pin.OUT) # Physical Pin 20
 
-print("--- Aegis Gateway Active ---")
-print("Monitoring physical layer for anomalies...")
+TARGET_PERIOD = 1000 
+TOLERANCE = 250
+
+print("--- PICO AUDITOR STARTING ---")
+
+
 
 while True:
-    # Baseline Pass-Through Logic
-    # This acts as a high-speed logic bridge. 
-    # Future updates will include frequency analysis and jitter detection.
+    duration = time_pulse_us(audit_in, 1, 100000)
+    period = duration * 2 if duration > 0 else 0
     
-    if attacker_in.value() == 1:
-        car_out.value(1)
+    if period > 0:
+        if (TARGET_PERIOD - TOLERANCE) < period < (TARGET_PERIOD + TOLERANCE):
+            print(f"SAFE SIGNAL DETECTED: {period}us")
+            trigger_out.value(1) # Send HIGH to Arduino
+        else:
+            print(f"ATTACK DETECTED: {period}us")
+            trigger_out.value(0) # Send LOW to Arduino
     else:
-        car_out.value(0)
+        print("NO SIGNAL DETECTED")
+        trigger_out.value(0)
+        
+    time.sleep(0.1)
+
