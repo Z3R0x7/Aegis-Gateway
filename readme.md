@@ -12,7 +12,7 @@
 ## 🏗️ System Architecture
 The AEGIS circuit connects two microcontrollers in a security pipeline that mirrors how a real EV charging session is initialized. The system enforces a professional **separation of concerns** between the Charger side (Execution) and the Vehicle side (Auditing).
 
-![System Architecture](./media/sys_arch.png)
+
 
 ### **Multi-Layer Defense Pipeline**
 1.  **Layer 1: Physical Signal Audit:** The gateway performs high-speed digital analysis of the J1772 Control Pilot pulse frequency to instantly detect physical spoofing attacks (e.g., Juice Jacking).
