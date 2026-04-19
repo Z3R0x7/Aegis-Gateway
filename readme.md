@@ -77,6 +77,11 @@ This list summarizes the core components used in the build:
 
 ---
 
+**🛠️ Developed with grit by Arnav K. & Ananya D.**  
+Submitted for the **MAHE Mobility Challenge 2026** — Cybersecurity Track
+
+---
+
 ## 🧑‍💻 Repository Structure
 
 ```text
