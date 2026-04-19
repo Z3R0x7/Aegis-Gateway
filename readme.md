@@ -1,67 +1,103 @@
 # ⚡ AEGIS — Dual-Layer EV Charging Security System
 > **MAHE Mobility Challenge 2026 · Track B: Secure Plug & Charge Protocol**
 
-![Status](https://img.shields.io/badge/Status-Functional_Prototype-success)
-![Security](https://img.shields.io/badge/Security-Dual--Layer-blue)
-![License](https://img.shields.io/badge/License-MIT-green)
+[![Status](https://img.shields.io/badge/Status-Functional_Prototype-success)](https://github.com/23R0x7/Add_files_via_upload/commits/main)
+[![Standards](https://img.shields.io/badge/Standards-IEC_61851_|_ISO_15118-blue)](https://standards.org)
+[![Security](https://img.shields.io/badge/Security-Dual--Layer-orange)](https://standards.org)
 
-AEGIS is a hardware-software intervention designed to protect EV infrastructure from two critical attack vectors: **Juice Jacking** (PWM signal injection) and **Identity Spoofing** (Rogue chargers).
-
-By implementing a **"Fail-Fast"** architecture, AEGIS ensures that no cryptographic data is ever exposed to a source that hasn't first passed a physical signal integrity check.
+**Juice Jacking** and **Identity Spoofing** are critical, often-overlooked vulnerabilities in public charging infrastructure. Aegis is a proactive, hardware-software intervention that secures the charging session via a strict, multi-layer verification pipeline. The gateway follows a strict "Fail-Fast" protocol, assuming every connection is malicious until proven otherwise.
 
 ---
 
 ## 🏗️ System Architecture
-The system separates responsibilities between the **Charger Side** (Execution) and the **Vehicle Side** (Auditing).
+The AEGIS circuit connects two microcontrollers in a security pipeline that mirrors how a real EV charging session is initialized. The system enforces a professional **separation of concerns** between the Charger side (Execution) and the Vehicle side (Auditing).
 
-![System Architecture](./media/architecture_diagram.png)
+![System Architecture](./media/sys_arch.png)
 
-### **The Two-Layer Defense**
-1.  **Layer 1 (Physical):** Real-time monitoring of the IEC 61851 Control Pilot signal. Deviations from the $1\text{kHz}$ standard trigger a hard hardware block.
-2.  **Layer 2 (Cryptographic):** A zero-trust XOR challenge-response handshake that prevents replay and spoofing attacks.
+### **Multi-Layer Defense Pipeline**
+1.  **Layer 1: Physical Signal Audit:** The gateway performs high-speed digital analysis of the J1772 Control Pilot pulse frequency to instantly detect physical spoofing attacks (e.g., Juice Jacking).
+2.  **Layer 2: Cryptographic Verification:** Once the physical layer is validated, the gateway performs a full **HMAC-SHA256 handshake** to prevent unauthorized charger impersonation (Identity Spoofing).
 
 ---
 
-## 📊 Attack Scenarios Demonstrated
-| Attack Method | Blocked By | Technical Logic |
+## 🛡️ Attack Scenarios Demonstrated
+
+| Attack Method | Blocked By | Verification Level |
 | :--- | :--- | :--- |
-| **Juice Jacking** | Layer 1 | Detected $5\text{kHz}$ malicious PWM injection. |
-| **Signal Clone** | Layer 2 | Replicated $1\text{kHz}$ pulse but failed key verification. |
-| **Replay Attack** | Layer 2 | Handshake failed because Nonce was already consumed. |
-| **Brute Force** | Layer 2 | Failed XOR+Seed calculation; access denied. |
+| **Juice Jacking** | Frequency analysis | Detected malicious 5kHz malformed signal (Standard is 1kHz). |
+| **Signal Clone** | HMAC-SHA256 Handshake | Failed key verification due to dynamic nonce. |
+| **Identity Spoofing** | XOR Challenge-Response | Mismatch of security seed. |
+| **Replay Attack** | Dynamic Nonce Verification | Token from previous session is invalid. |
 
 ---
 
-## 🔌 Hardware Configuration
-The prototype is built using a dual-MCU setup to simulate the interface between a Charging Station and a Vehicle BMS.
+## 📡 Layer 1 Security Demonstration (Juice Jacking)
+Attackers can send malformed pulses to impersonate a car. The Pico audits the pilot signal at the physical layer, with a $50\%$ duty cycle.
 
-![Final Setup](./media/setup.jpg)
-
-### **Bill of Materials**
-* **Arduino Uno:** Charger Simulator & OLED Driver.
-* **Raspberry Pi Pico W:** Vehicle BMS & Security Auditor.
-* **IRF520 MOSFET:** Physical power gate (Hardware Enforced).
-* **SSD1306 OLED:** Live status and breach telemetry.
+In safe mode, the signal is a strict 1kHz pulse. Any deviation outside the established safe window ($750\mu s - 1250\mu s$ period) immediately triggers a total hardware block.
 
 ---
 
-## 💻 Running the Demo
+## 🔐 Cryptographic Security Demonstration (Layer 2)
+With Layer 1 verified, the gateway initiates the Layer 2 authentication. This prevents a "dumb" charger from just generating the right frequency. This part uses dynamic challenges (nonces) and a shared secret key (seed) to compute single-use tokens, preventing any form of replay attack.
 
-### **Software-Only Simulation (No Hardware Required)**
-Demonstrate the cryptographic logic using two terminal windows:
-1.  **Terminal 1 (Vehicle):** `python3 demo/gateway.py`
-2.  **Terminal 2 (Charger):** `python3 demo/charger.py`
+This demonstrates the full verification process:
+1.  Issuing Nonce
+2.  Charger computing response
+3.  Cross-verification on gateway
 
-### **Hardware Integration**
-1.  Flash `src/attacker/attacker.ino` to the Arduino.
-2.  Flash `src/gateway/aegis_logic.py` to the Pico.
-3.  **The Test:** Turn the potentiometer. Watch the OLED switch from `SECURE` (1kHz) to `BREACH` (5kHz) as the MOSFET physically cuts power.
+The XOR-based handshake uses this math:
+> `Key = (Nonce XOR 0xAF) + 42`
+
+This demo highlights the protocol's ability to prevent signal-cloning attacks.
+
+![Layer 2 Verification Demo](./media/sec_key_demo.png)
+
+---
+
+## 🔌 Hardware Setup
+The AEGIS gateway integrates logic level shifting, status telemetry, and actuator control into a cohesive prototype. The I2C display and Level Shifter work together with the MOSFET module to provide a physical power control gate.
+
+* **The Circuit Schematic**:
+    ![Circuit Schematic](./media/circ_dia.png)
+
+* **Final Setup**:
+    ![Final Setup](./media/setup.jpeg)
+
+* **Physical Components**:
+    ![Physical Components](./media/parts.jpg)
+
+This list summarizes the core components used in the build:
+* **Microcontrollers:** Arduino Uno R3 (Charger), Raspberry Pi Pico W (Vehicle BMS)
+* **I2C Status:** 0.96" SSD1306 OLED Display
+* **Logic Bridging:** 4-Channel Logic Level Shifter
+* **Human Interface:** 10k Potentiometer
+* **Power Control:** IRF520 N-Channel MOSFET module
+* **Actuator:** 12V DC Solenoid Valve
 
 ---
 
-* **Security Depth:** Two independent layers (Physical + Crypto).
-* **Safety:** MOSFET defaults to LOW (Fail-Safe by design).
-* **Standards:** Fully compliant with **IEC 61851** and **ISO 15118** principles.
+## 🧑‍💻 Repository Structure
 
----
-**Built for the MAHE Mobility Challenge 2026 — Cybersecurity Track**
+```text
+AEGIS/
+├── demo/
+│   ├── gateway.py             # Terminal demo - Gateway (BMS Auditor) side
+│   └── charger.py             # Terminal demo - Charger side (Client simulation)
+├── src/
+│   ├── attacker/
+│   │   └── attacker.ino       # Arduino Uno: PWM generation & OLED logic
+│   └── gateway/
+│       └── aegis_logic.py     # Pi Pico: High-speed PWM audit & decision logic
+├── docs/
+│   └── circuit_explanation.md # Deep-dive documentation of the physical layer
+├── hardware/
+│   └── parts_list.csv         # Bill of Materials and pin usage data
+├── LICENSE                    # MIT License
+├── media/
+│   ├── circ_dia.png           # Professional circuit diagram
+│   ├── sys_arch.png           # High-level architecture block diagram
+│   ├── parts.jpg              # Component spread shot
+│   ├── sec_key_demo.png       # Image of the Layer 2 authentication process
+│   └── setup.jpeg             # Photo of the completed prototype
+└── README.md                  # Project overview and security details
